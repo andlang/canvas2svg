@@ -265,6 +265,7 @@
         this.__root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
         this.__root.setAttribute("width", this.width);
         this.__root.setAttribute("height", this.height);
+        this.__root.setAttribute("viewBox", "0,0,"+this.width+","+this.height);
 
         //make sure we don't generate the same ids in defs
         this.__ids = {};
@@ -356,52 +357,52 @@
     			node.setAttribute(type, "");
     		})
     	}
-
         var keys = Object.keys(STYLES), i, style, value, id, regex, matches;
         for (i = 0; i < keys.length; i++) {
             style = STYLES[keys[i]];
             value = this[keys[i]];
-            if (style.apply) {
-                //is this a gradient or pattern?
-                if (value instanceof CanvasPattern) {
-                    // pattern  seems no need
-                    // if (value.__ctx) {
-                    //    //copy over defs
-                    //    for (var j = 0; j < value.__ctx.__defs.childNodes.length; j ++) {
-                    //        id = value.__ctx.__defs.childNodes[j].getAttribute("id");
-                    //        this.__ids[id] = id;
-                    //        this.__defs.appendChild(value.__ctx.__defs.childNodes[j]);
-                    //    }
-                    // }
-                    currentElement.setAttribute(style.apply, format("url(#{id})", {id:value.__root.getAttribute("id")}));
-                } else if (value instanceof CanvasGradient) {
-                    //gradient
-                    currentElement.setAttribute(style.apply, format("url(#{id})", {id:value.__root.getAttribute("id")}));
-                } else if (style.apply.indexOf(type)!==-1 && style.svg !== value) {
-                    if ((style.svgAttr === "stroke" || style.svgAttr === "fill") && value.indexOf("rgba") !== -1) {
-                        //separate alpha value, since illustrator can't handle it
-                        regex = /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi;
-                        matches = regex.exec(value);
-                        currentElement.setAttribute(style.svgAttr, format("rgb({r},{g},{b})", {r:matches[1], g:matches[2], b:matches[3]}));
-                        //should take globalAlpha here
-                        var opacity = matches[4];
-                        var globalAlpha = this.globalAlpha;
-                        if (globalAlpha != null) {
-                            opacity *= globalAlpha;
-                        }
-                        currentElement.setAttribute(style.svgAttr+"-opacity", opacity);
-                    } else {
-                        var attr = style.svgAttr;
-                        if (keys[i] === 'globalAlpha') {
-                            attr = type+'-'+style.svgAttr;
-                            if (currentElement.getAttribute(attr)) {
-                                 //fill-opacity or stroke-opacity has already been set by stroke or fill.
-                                continue;
-                            }
-                        }
-                        //otherwise only update attribute if right type, and not svg default
-                        currentElement.setAttribute(attr, value);
+            if (!style.apply || style.apply.indexOf(type) < 0) {
+                continue;
+            }
+            //is this a gradient or pattern?
+            if (value instanceof CanvasPattern) {
+                // pattern  ?seems no necessary
+                // if (value.__ctx) {
+                //    //copy over defs
+                //    for (var j = 0; j < value.__ctx.__defs.childNodes.length; j ++) {
+                //        id = value.__ctx.__defs.childNodes[j].getAttribute("id");
+                //        this.__ids[id] = id;
+                //        this.__defs.appendChild(value.__ctx.__defs.childNodes[j]);
+                //    }
+                // }
+                currentElement.setAttribute(style.apply, format("url(#{id})", {id:value.__root.getAttribute("id")}));
+            } else if (value instanceof CanvasGradient) {
+                //gradient
+                currentElement.setAttribute(style.apply, format("url(#{id})", {id:value.__root.getAttribute("id")}));
+            } else if (style.apply.indexOf(type)!==-1 && style.svg !== value) {
+                if ((style.svgAttr === "stroke" || style.svgAttr === "fill") && value.indexOf("rgba") !== -1) {
+                    //separate alpha value, since illustrator can't handle it
+                    regex = /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi;
+                    matches = regex.exec(value);
+                    currentElement.setAttribute(style.svgAttr, format("rgb({r},{g},{b})", {r:matches[1], g:matches[2], b:matches[3]}));
+                    //should take globalAlpha here
+                    var opacity = matches[4];
+                    var globalAlpha = this.globalAlpha;
+                    if (globalAlpha != null) {
+                        opacity *= globalAlpha;
                     }
+                    currentElement.setAttribute(style.svgAttr+"-opacity", opacity);
+                } else {
+                    var attr = style.svgAttr;
+                    if (keys[i] === 'globalAlpha') {
+                        attr = type+'-'+style.svgAttr;
+                        if (currentElement.getAttribute(attr)) {
+                                //fill-opacity or stroke-opacity has already been set by stroke or fill.
+                            continue;
+                        }
+                    }
+                    //otherwise only update attribute if right type, and not svg default
+                    currentElement.setAttribute(attr, value);
                 }
             }
         }
@@ -863,10 +864,10 @@
     ctx.prototype.createLinearGradient = function (x1, y1, x2, y2) {
         var grad = this.__createElement("linearGradient", {
             id : randomString(this.__ids),
-            x1 : x1+"px",
-            x2 : x2+"px",
-            y1 : y1+"px",
-            y2 : y2+"px",
+            x1 : x1,
+            x2 : x2,
+            y1 : y1,
+            y2 : y2,
             "gradientUnits" : "userSpaceOnUse"
         }, false);
         this.__defs.appendChild(grad);
@@ -880,12 +881,12 @@
     ctx.prototype.createRadialGradient = function (x0, y0, r0, x1, y1, r1) {
         var grad = this.__createElement("radialGradient", {
             id : randomString(this.__ids),
-            cx : x1+"px",
-            cy : y1+"px",
-            r  : r1+"px",
-            fx : x0+"px",
-            fy : y0+"px",
-            fr : r0+"px",
+            cx : x1,
+            cy : y1,
+            r  : r1,
+            fx : x0,
+            fy : y0,
+            fr : r0,
             "gradientUnits" : "userSpaceOnUse"
         }, false);
         this.__defs.appendChild(grad);
