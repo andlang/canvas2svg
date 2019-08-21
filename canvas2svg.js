@@ -365,7 +365,7 @@
             if (style.apply) {
                 //is this a gradient or pattern?
                 if (value instanceof CanvasPattern) {
-                    //pattern this will dead loop, why?
+                    // pattern Infinite loop, this seems no need
                     // if (value.__ctx) {
                     //    //copy over defs
                     //    while(value.__ctx.__defs.childNodes.length) {
@@ -890,11 +890,11 @@
             r  : r1+"px",
             fx : x0+"px",
             fy : y0+"px",
+            fr : r0+"px",
             "gradientUnits" : "userSpaceOnUse"
         }, false);
         this.__defs.appendChild(grad);
         return new CanvasGradient(grad, this);
-
     };
 
     /**
@@ -1142,6 +1142,7 @@
             svgImage.setAttribute("width", dw);
             svgImage.setAttribute("height", dh);
             svgImage.setAttribute("preserveAspectRatio", "none");
+	        svgImage.setAttribute("opacity", this.globalAlpha || 1);
 
             if (sx || sy || sw !== image.width || sh !== image.height) {
                 //crop the image using a temporary canvas
