@@ -365,15 +365,15 @@
             if (style.apply) {
                 //is this a gradient or pattern?
                 if (value instanceof CanvasPattern) {
-                    //pattern
-                    if (value.__ctx) {
-                        //copy over defs
-                        while(value.__ctx.__defs.childNodes.length) {
-                            id = value.__ctx.__defs.childNodes[0].getAttribute("id");
-                            this.__ids[id] = id;
-                            this.__defs.appendChild(value.__ctx.__defs.childNodes[0]);
-                        }
-                    }
+                    //pattern this will dead loop, why?
+                    // if (value.__ctx) {
+                    //    //copy over defs
+                    //    while(value.__ctx.__defs.childNodes.length) {
+                    //        id = value.__ctx.__defs.childNodes[0].getAttribute("id");
+                    //        this.__ids[id] = id;
+                    //        this.__defs.appendChild(value.__ctx.__defs.childNodes[0]);
+                    //    }
+                    // }
                     currentElement.setAttribute(style.apply, format("url(#{id})", {id:value.__root.getAttribute("id")}));
                 }
                 else if (value instanceof CanvasGradient) {
@@ -1161,19 +1161,47 @@
 
     /**
      * Generates a pattern tag
+     * 1. support repetition
+     * 2. no-break change: add special attrs (width,height,x,y)
      */
-    ctx.prototype.createPattern = function (image, repetition) {
-        var pattern = this.__document.createElementNS("http://www.w3.org/2000/svg", "pattern"), id = randomString(this.__ids),
-            img;
+    ctx.prototype.createPattern = function (image, repetition, width, height, x, y) {
+        var pattern = this.__document.createElementNS("http://www.w3.org/2000/svg", "pattern"), 
+            id = randomString(this.__ids),
+            img, pWidth, pHeight, mWidth, mHeight, mx, my;
+        repetition = ('' + repetition).toLowerCase();
+        mWidth = width||image.width;
+        mHeight = height||image.height;
+        if (repetition === 'repeat-x') {
+            pWidth = mWidth;
+            pHeight = this.height;
+        } else if (repetition === 'repeat-y') {
+            pWidth = this.width;
+            pHeight = mHeight;
+        } else if (repetition === 'no-repeat') {
+            pWidth = this.width;
+            pHeight = this.height;
+            mx = x||0;
+            my = y||0;
+        } else {
+            pWidth = mWidth;
+            pHeight = mHeight;
+        }
         pattern.setAttribute("id", id);
-        pattern.setAttribute("width", image.width);
-        pattern.setAttribute("height", image.height);
+        pattern.setAttribute("width", pWidth);
+        pattern.setAttribute("height", pHeight);
+        pattern.setAttribute("patternUnits", "userSpaceOnUse");
         if (image.nodeName === "CANVAS" || image.nodeName === "IMG") {
             img = this.__document.createElementNS("http://www.w3.org/2000/svg", "image");
-            img.setAttribute("width", image.width);
-            img.setAttribute("height", image.height);
-            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
-                image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src"));
+            img.setAttribute("x", mx||0);
+            img.setAttribute("y", my||0);
+            img.setAttribute("preserveAspectRatio", "none");
+            img.setAttribute("width", mWidth);
+            img.setAttribute("height", mHeight);
+            img.setAttributeNS(
+                "http://www.w3.org/1999/xlink", 
+                "xlink:href",
+                image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src")
+            );
             pattern.appendChild(img);
             this.__defs.appendChild(pattern);
         } else if (image instanceof ctx) {
