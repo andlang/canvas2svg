@@ -14,6 +14,11 @@
 ;(function () {
     "use strict";
 
+    var SVGURL = 'http://www.w3.org/',
+        SVGNAME = SVGURL + '2000/svg',
+        SVGXMLNS = SVGURL + '2000/xmlns/',
+        SVGXLINK = SVGURL + '1999/xlink';
+
     var STYLES, ctx, CanvasGradient, CanvasPattern, namedEntities;
 
     //helper function to format a string
@@ -259,10 +264,10 @@
         this.__groupStack = [];
 
         //the root svg element
-        this.__root = this.__document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        this.__root = this.__document.createElementNS(SVGNAME, "svg");
+        this.__root.setAttributeNS(SVGXMLNS, "xmlns:xlink", SVGXLINK);
         this.__root.setAttribute("version", 1.1);
-        this.__root.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        this.__root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+        this.__root.setAttribute("xmlns", SVGNAME);
         this.__root.setAttribute("width", this.width);
         this.__root.setAttribute("height", this.height);
         this.__root.setAttribute("viewBox", "0,0,"+this.width+","+this.height);
@@ -271,11 +276,11 @@
         this.__ids = {};
 
         //defs tag
-        this.__defs = this.__document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        this.__defs = this.__document.createElementNS(SVGNAME, "defs");
         this.__root.appendChild(this.__defs);
 
         //also add a group child. the svg element can't use the transform attribute
-        this.__currentElement = this.__document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.__currentElement = this.__document.createElementNS(SVGNAME, "g");
         this.__root.appendChild(this.__currentElement);
     };
 
@@ -287,8 +292,7 @@
         if (typeof properties === "undefined") {
             properties = {};
         }
-
-        var element = this.__document.createElementNS("http://www.w3.org/2000/svg", elementName),
+        var element = this.__document.createElementNS(SVGNAME, elementName),
             keys = Object.keys(properties), i, key;
         if (resetFill) {
             //if fill or stroke is not specified, the svg element should not display. By default SVG's fill is black.
@@ -430,11 +434,10 @@
     ctx.prototype.getSerializedSvg = function (fixNamedEntities) {
         var serialized = new XMLSerializer().serializeToString(this.__root),
             keys, i, key, value, regexp, xmlns;
-
         //IE search for a duplicate xmnls because they didn't implement setAttributeNS correctly
         xmlns = /xmlns="http:\/\/www\.w3\.org\/2000\/svg".+xmlns="http:\/\/www\.w3\.org\/2000\/svg/gi;
         if (xmlns.test(serialized)) {
-            serialized = serialized.replace('xmlns="http://www.w3.org/2000/svg','xmlns:xlink="http://www.w3.org/1999/xlink');
+            serialized = serialized.replace('xmlns="'+SVGNAME,'xmlns:xlink="'+SVGXLINK);
         }
         if (fixNamedEntities) {
             keys = Object.keys(namedEntities);
@@ -498,12 +501,10 @@
         		this.__currentElementsToStyle.children.push(this.__currentElement)
         		this.__applyCurrentDefaultPath();
         	}
-
             var group = this.__createElement("g");
             parent.appendChild(group);
             this.__currentElement = group;
         }
-
         var transform = this.__currentElement.getAttribute("transform");
         if (transform) {
             transform += " ";
@@ -624,8 +625,10 @@
      */
     ctx.prototype.bezierCurveTo = function (cp1x, cp1y, cp2x, cp2y, x, y) {
         this.__currentPosition = {x: x, y: y};
-        this.__addPathCommand(format("C {cp1x} {cp1y} {cp2x} {cp2y} {x} {y}",
-            {cp1x:cp1x, cp1y:cp1y, cp2x:cp2x, cp2y:cp2y, x:x, y:y}));
+        this.__addPathCommand(format(
+            "C {cp1x} {cp1y} {cp2x} {cp2y} {x} {y}",
+            {cp1x:cp1x, cp1y:cp1y, cp2x:cp2x, cp2y:cp2y, x:x, y:y}
+        ));
     };
 
     /**
@@ -633,7 +636,10 @@
      */
     ctx.prototype.quadraticCurveTo = function (cpx, cpy, x, y) {
         this.__currentPosition = {x: x, y: y};
-        this.__addPathCommand(format("Q {cpx} {cpy} {x} {y}", {cpx:cpx, cpy:cpy, x:x, y:y}));
+        this.__addPathCommand(format(
+            "Q {cpx} {cpy} {x} {y}", 
+            {cpx:cpx, cpy:cpy, x:x, y:y}
+        ));
     };
 
     /**
@@ -918,7 +924,6 @@
         if (this.__fontHref) {
             data.href = this.__fontHref;
         }
-
         return data;
     };
 
@@ -932,7 +937,7 @@
     ctx.prototype.__wrapTextLink = function (font, element) {
         if (font.href) {
             var a = this.__createElement("a");
-            a.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", font.href);
+            a.setAttributeNS(SVGXLINK, "xlink:href", font.href);
             a.appendChild(element);
             return a;
         }
@@ -1030,9 +1035,10 @@
             largeArcFlag = diff > Math.PI ? 1 : 0;
         }
         this.lineTo(startX, startY);
-        this.__addPathCommand(format("A {rx} {ry} {xAxisRotation} {largeArcFlag} {sweepFlag} {endX} {endY}",
-            {rx:radius, ry:radius, xAxisRotation:0, largeArcFlag:largeArcFlag, sweepFlag:sweepFlag, endX:endX, endY:endY}));
-
+        this.__addPathCommand(format(
+            "A {rx} {ry} {xAxisRotation} {largeArcFlag} {sweepFlag} {endX} {endY}",
+            {rx:radius, ry:radius, xAxisRotation:0, largeArcFlag:largeArcFlag, sweepFlag:sweepFlag, endX:endX, endY:endY}
+        ));
         this.__currentPosition = {x: endX, y: endY};
     };
 
@@ -1146,8 +1152,11 @@
                 image = canvas;
             }
             svgImage.setAttribute("transform", translateDirective);
-            svgImage.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
-                image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src"));
+            svgImage.setAttributeNS(
+                SVGXLINK, 
+                "xlink:href",
+                image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src")
+            );
             parent.appendChild(svgImage);
         }
     };
@@ -1158,7 +1167,7 @@
      * 2. no-break change: add special attrs (width,height,x,y)
      */
     ctx.prototype.createPattern = function (image, repetition, width, height, x, y) {
-        var pattern = this.__document.createElementNS("http://www.w3.org/2000/svg", "pattern"), 
+        var pattern = this.__document.createElementNS(SVGNAME, "pattern"), 
             id = randomString(this.__ids),
             img, pWidth, pHeight, mWidth, mHeight, mx, my;
         repetition = ('' + repetition).toLowerCase();
@@ -1184,14 +1193,14 @@
         pattern.setAttribute("height", pHeight);
         pattern.setAttribute("patternUnits", "userSpaceOnUse");
         if (image.nodeName === "CANVAS" || image.nodeName === "IMG") {
-            img = this.__document.createElementNS("http://www.w3.org/2000/svg", "image");
+            img = this.__document.createElementNS(SVGNAME, "image");
             img.setAttribute("x", mx||0);
             img.setAttribute("y", my||0);
             img.setAttribute("preserveAspectRatio", "none");
             img.setAttribute("width", mWidth);
             img.setAttribute("height", mHeight);
             img.setAttributeNS(
-                "http://www.w3.org/1999/xlink", 
+                SVGXLINK, 
                 "xlink:href",
                 image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src")
             );
