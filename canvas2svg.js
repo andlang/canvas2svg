@@ -270,7 +270,7 @@
         this.__root.setAttribute("xmlns", SVGNAME);
         this.__root.setAttribute("width", this.width);
         this.__root.setAttribute("height", this.height);
-        this.__root.setAttribute("viewBox", "0,0,"+this.width+","+this.height);
+        this.__root.setAttribute("viewBox", "0 0 "+this.width+" "+this.height);
 
         //make sure we don't generate the same ids in defs
         this.__ids = {};
